@@ -1,0 +1,93 @@
+2026-02-12 20:29:27,371 - RegMamba - INFO - ======================================================================
+2026-02-12 20:29:27,371 - RegMamba - INFO -   RegMamba 训练开始
+2026-02-12 20:29:27,371 - RegMamba - INFO -   设计者：周女士
+2026-02-12 20:29:27,371 - RegMamba - INFO - ======================================================================
+2026-02-12 20:29:27,371 - RegMamba - INFO - 
+配置参数:
+Namespace(augment=0.5, batch_size=4, ckpt='/home/LY/ZiyuZhou/RegFormer-main/RM-git/experiment/RegMamba_kitti_2026-02-12_15-09/checkpoints/best_model.pth', d_model=128, data_list='/home/LY/ZiyuZhou/RegFormer-main/Reg_Mamaba/data/kitti_list', dataset='kitti', dropout=0.1, eval_batch_size=4, eval_interval=2, gpu=0, lambda_ds=0.1, lambda_overlap=0.5, lambda_rot=1.0, lambda_trans=1.0, learning_rate=0.0001, lidar_root='/home/LY/ZiyuZhou/RegFormer-main/Reg_Mamaba/data/kitti/dataset/sequences', lr_gamma=0.5, lr_stepsize=20, max_epoch=200, momentum=0.9, multi_gpu=None, n_heads=8, n_mamba_layers=6, num_points=10240, optimizer='Adam', patch_size=32, rot_thresh=5.0, save_interval=10, stride=16, task_name=None, trans_thresh=2.0, use_deep_supervision=True, use_overlap_loss=False, visualize=False, voxel_size=0.3, weight_decay=0.0001, workers=4)
+
+2026-02-12 20:29:27,412 - RegMamba - INFO - 训练集大小: 1358
+2026-02-12 20:29:27,412 - RegMamba - INFO - 验证集大小: 180
+2026-02-12 20:29:28,328 - RegMamba - INFO - 使用单GPU: 0
+2026-02-12 20:29:28,408 - RegMamba - INFO - 从检查点恢复: /home/LY/ZiyuZhou/RegFormer-main/RM-git/experiment/RegMamba_kitti_2026-02-12_15-09/checkpoints/best_model.pth, epoch=44
+2026-02-12 20:29:28,408 - RegMamba - INFO - 
+开始训练...
+
+2026-02-12 20:31:46,411 - RegMamba - INFO - Epoch 45: loss=1.1337, rot=0.1901, trans=0.5475, time=137.9s
+2026-02-12 20:34:00,572 - RegMamba - INFO - Epoch 46: loss=1.1148, rot=0.1700, trans=0.5495, time=134.1s
+2026-02-12 20:34:06,979 - RegMamba - INFO -   验证: Loss=0.9744, Recall=85.00%, RRE=6.0097°, RTE=0.8207m
+2026-02-12 20:34:07,047 - RegMamba - INFO -   ★ 保存最优模型 (Recall=85.00%): /home/LY/ZiyuZhou/RegFormer-main/RM-git/experiment/RegMamba_kitti_2026-02-12_20-29/checkpoints/best_model.pth
+2026-02-12 20:36:19,835 - RegMamba - INFO - Epoch 47: loss=1.1268, rot=0.1758, trans=0.5559, time=132.7s
+2026-02-12 20:38:35,079 - RegMamba - INFO - Epoch 48: loss=1.1349, rot=0.1841, trans=0.5561, time=135.2s
+2026-02-12 20:38:41,351 - RegMamba - INFO -   验证: Loss=0.9748, Recall=84.44%, RRE=6.8026°, RTE=0.8174m
+2026-02-12 20:40:55,861 - RegMamba - INFO - Epoch 49: loss=1.1379, rot=0.1950, trans=0.5486, time=134.4s
+2026-02-12 20:43:11,978 - RegMamba - INFO - Epoch 50: loss=1.1292, rot=0.1853, trans=0.5500, time=136.1s
+2026-02-12 20:43:18,194 - RegMamba - INFO -   验证: Loss=0.9853, Recall=84.44%, RRE=6.4319°, RTE=0.8369m
+2026-02-12 20:43:18,907 - RegMamba - INFO -   保存检查点: /home/LY/ZiyuZhou/RegFormer-main/RM-git/experiment/RegMamba_kitti_2026-02-12_20-29/checkpoints/epoch_50.pth
+2026-02-12 20:45:33,805 - RegMamba - INFO - Epoch 51: loss=1.1273, rot=0.1844, trans=0.5491, time=134.8s
+2026-02-12 20:47:48,637 - RegMamba - INFO - Epoch 52: loss=1.1263, rot=0.1759, trans=0.5569, time=134.8s
+2026-02-12 20:47:54,809 - RegMamba - INFO -   验证: Loss=0.9960, Recall=85.00%, RRE=5.9061°, RTE=0.8754m
+2026-02-12 20:50:09,289 - RegMamba - INFO - Epoch 53: loss=1.1454, rot=0.2015, trans=0.5506, time=134.4s
+2026-02-12 20:52:24,205 - RegMamba - INFO - Epoch 54: loss=1.1191, rot=0.1800, trans=0.5462, time=134.9s
+2026-02-12 20:52:30,486 - RegMamba - INFO -   验证: Loss=1.0245, Recall=83.89%, RRE=5.9952°, RTE=0.9243m
+2026-02-12 20:54:45,307 - RegMamba - INFO - Epoch 55: loss=1.1261, rot=0.1782, trans=0.5553, time=134.8s
+2026-02-12 20:57:00,154 - RegMamba - INFO - Epoch 56: loss=1.1294, rot=0.1839, trans=0.5535, time=134.8s
+2026-02-12 20:57:06,553 - RegMamba - INFO -   验证: Loss=0.9739, Recall=83.33%, RRE=7.4932°, RTE=0.8271m
+2026-02-12 20:59:21,171 - RegMamba - INFO - Epoch 57: loss=1.1252, rot=0.1813, trans=0.5516, time=134.6s
+2026-02-12 21:01:35,993 - RegMamba - INFO - Epoch 58: loss=1.1134, rot=0.1752, trans=0.5463, time=134.8s
+2026-02-12 21:01:42,569 - RegMamba - INFO -   验证: Loss=0.9848, Recall=84.44%, RRE=6.4786°, RTE=0.8376m
+2026-02-12 21:03:57,304 - RegMamba - INFO - Epoch 59: loss=1.1352, rot=0.2007, trans=0.5428, time=134.7s
+2026-02-12 21:06:11,907 - RegMamba - INFO - Epoch 60: loss=1.1301, rot=0.1878, trans=0.5511, time=134.5s
+2026-02-12 21:06:18,546 - RegMamba - INFO -   验证: Loss=0.9844, Recall=83.89%, RRE=6.3725°, RTE=0.8489m
+2026-02-12 21:06:19,269 - RegMamba - INFO -   保存检查点: /home/LY/ZiyuZhou/RegFormer-main/RM-git/experiment/RegMamba_kitti_2026-02-12_20-29/checkpoints/epoch_60.pth
+2026-02-12 21:08:33,835 - RegMamba - INFO - Epoch 61: loss=1.1281, rot=0.1942, trans=0.5439, time=134.5s
+2026-02-12 21:10:49,238 - RegMamba - INFO - Epoch 62: loss=1.1280, rot=0.1976, trans=0.5407, time=135.3s
+2026-02-12 21:10:55,606 - RegMamba - INFO -   验证: Loss=0.9808, Recall=83.89%, RRE=6.0268°, RTE=0.8361m
+2026-02-12 21:13:10,668 - RegMamba - INFO - Epoch 63: loss=1.1273, rot=0.1909, trans=0.5466, time=135.0s
+2026-02-12 21:15:26,266 - RegMamba - INFO - Epoch 64: loss=1.1182, rot=0.1832, trans=0.5460, time=135.5s
+2026-02-12 21:15:32,646 - RegMamba - INFO -   验证: Loss=0.9820, Recall=85.00%, RRE=5.9590°, RTE=0.8470m
+2026-02-12 21:17:46,541 - RegMamba - INFO - Epoch 65: loss=1.1197, rot=0.1864, trans=0.5444, time=133.8s
+2026-02-12 21:20:01,551 - RegMamba - INFO - Epoch 66: loss=1.1076, rot=0.1759, trans=0.5431, time=134.9s
+2026-02-12 21:20:08,129 - RegMamba - INFO -   验证: Loss=0.9870, Recall=83.89%, RRE=5.8558°, RTE=0.8520m
+2026-02-12 21:22:22,975 - RegMamba - INFO - Epoch 67: loss=1.1052, rot=0.1763, trans=0.5401, time=134.7s
+2026-02-12 21:24:37,946 - RegMamba - INFO - Epoch 68: loss=1.1124, rot=0.1794, trans=0.5445, time=134.9s
+2026-02-12 21:24:44,557 - RegMamba - INFO -   验证: Loss=0.9747, Recall=83.89%, RRE=5.8837°, RTE=0.8265m
+2026-02-12 21:26:59,974 - RegMamba - INFO - Epoch 69: loss=1.1202, rot=0.1865, trans=0.5453, time=135.3s
+2026-02-12 21:29:14,938 - RegMamba - INFO - Epoch 70: loss=1.1390, rot=0.2059, trans=0.5448, time=134.9s
+2026-02-12 21:29:21,318 - RegMamba - INFO -   验证: Loss=0.9511, Recall=85.00%, RRE=5.9871°, RTE=0.7966m
+2026-02-12 21:29:21,954 - RegMamba - INFO -   保存检查点: /home/LY/ZiyuZhou/RegFormer-main/RM-git/experiment/RegMamba_kitti_2026-02-12_20-29/checkpoints/epoch_70.pth
+2026-02-12 21:31:12,683 - RegMamba - INFO - Epoch 71: loss=1.1099, rot=0.1797, trans=0.5423, time=110.6s
+2026-02-12 21:32:42,354 - RegMamba - INFO - Epoch 72: loss=1.1170, rot=0.1871, trans=0.5421, time=89.6s
+2026-02-12 21:32:46,761 - RegMamba - INFO -   验证: Loss=1.0761, Recall=84.44%, RRE=6.6840°, RTE=0.9924m
+2026-02-12 21:34:15,576 - RegMamba - INFO - Epoch 73: loss=1.1057, rot=0.1789, trans=0.5388, time=88.7s
+2026-02-12 21:35:45,130 - RegMamba - INFO - Epoch 74: loss=1.1230, rot=0.1928, trans=0.5426, time=89.4s
+2026-02-12 21:35:50,121 - RegMamba - INFO -   验证: Loss=0.9561, Recall=84.44%, RRE=6.8146°, RTE=0.8078m
+2026-02-12 21:37:18,912 - RegMamba - INFO - Epoch 75: loss=1.1163, rot=0.1841, trans=0.5449, time=88.7s
+2026-02-12 21:38:48,055 - RegMamba - INFO - Epoch 76: loss=1.1182, rot=0.1849, trans=0.5460, time=89.0s
+2026-02-12 21:38:52,206 - RegMamba - INFO -   验证: Loss=0.9441, Recall=84.44%, RRE=6.8030°, RTE=0.7873m
+2026-02-12 21:40:20,703 - RegMamba - INFO - Epoch 77: loss=1.0999, rot=0.1773, trans=0.5355, time=88.4s
+2026-02-12 21:41:49,204 - RegMamba - INFO - Epoch 78: loss=1.1134, rot=0.1829, trans=0.5437, time=88.4s
+2026-02-12 21:41:53,586 - RegMamba - INFO -   验证: Loss=1.0021, Recall=78.89%, RRE=8.4031°, RTE=0.8746m
+2026-02-12 21:43:21,285 - RegMamba - INFO - Epoch 79: loss=1.1164, rot=0.1850, trans=0.5450, time=87.6s
+2026-02-12 21:44:50,499 - RegMamba - INFO - Epoch 80: loss=1.1068, rot=0.1923, trans=0.5278, time=89.1s
+2026-02-12 21:44:54,745 - RegMamba - INFO -   验证: Loss=0.9381, Recall=16.67%, RRE=10.3060°, RTE=0.7867m
+2026-02-12 21:44:55,375 - RegMamba - INFO -   保存检查点: /home/LY/ZiyuZhou/RegFormer-main/RM-git/experiment/RegMamba_kitti_2026-02-12_20-29/checkpoints/epoch_80.pth
+2026-02-12 21:46:24,220 - RegMamba - INFO - Epoch 81: loss=1.1175, rot=0.1849, trans=0.5466, time=88.7s
+2026-02-12 21:47:53,516 - RegMamba - INFO - Epoch 82: loss=1.1143, rot=0.1846, trans=0.5436, time=89.2s
+2026-02-12 21:47:57,819 - RegMamba - INFO -   验证: Loss=0.9730, Recall=23.33%, RRE=10.1158°, RTE=0.8195m
+2026-02-12 21:49:25,922 - RegMamba - INFO - Epoch 83: loss=1.1231, rot=0.1954, trans=0.5419, time=88.0s
+2026-02-12 21:50:53,977 - RegMamba - INFO - Epoch 84: loss=1.1060, rot=0.1770, trans=0.5434, time=87.9s
+2026-02-12 21:50:58,209 - RegMamba - INFO -   验证: Loss=0.9816, Recall=77.78%, RRE=8.7001°, RTE=0.8353m
+2026-02-12 21:52:26,600 - RegMamba - INFO - Epoch 85: loss=1.1109, rot=0.1844, trans=0.5408, time=88.3s
+2026-02-12 21:53:54,847 - RegMamba - INFO - Epoch 86: loss=1.1140, rot=0.1877, trans=0.5407, time=88.1s
+2026-02-12 21:53:58,971 - RegMamba - INFO -   验证: Loss=0.9588, Recall=78.89%, RRE=8.4419°, RTE=0.8045m
+2026-02-12 21:55:25,827 - RegMamba - INFO - Epoch 87: loss=1.1120, rot=0.1847, trans=0.5420, time=86.7s
+2026-02-12 21:56:53,612 - RegMamba - INFO - Epoch 88: loss=1.1165, rot=0.1950, trans=0.5361, time=87.7s
+2026-02-12 21:56:57,915 - RegMamba - INFO -   验证: Loss=1.0118, Recall=76.67%, RRE=8.7858°, RTE=0.8806m
+2026-02-12 21:58:26,041 - RegMamba - INFO - Epoch 89: loss=1.1295, rot=0.2002, trans=0.5440, time=88.0s
+2026-02-12 21:59:53,789 - RegMamba - INFO - Epoch 90: loss=1.1029, rot=0.1766, trans=0.5413, time=87.6s
+2026-02-12 21:59:58,185 - RegMamba - INFO -   验证: Loss=0.9631, Recall=78.89%, RRE=8.4308°, RTE=0.8177m
+2026-02-12 21:59:58,823 - RegMamba - INFO -   保存检查点: /home/LY/ZiyuZhou/RegFormer-main/RM-git/experiment/RegMamba_kitti_2026-02-12_20-29/checkpoints/epoch_90.pth
+2026-02-12 22:01:26,151 - RegMamba - INFO - Epoch 91: loss=1.1025, rot=0.1773, trans=0.5401, time=87.2s
+2026-02-12 22:02:52,875 - RegMamba - INFO - Epoch 92: loss=1.1003, rot=0.1841, trans=0.5313, time=86.6s
+2026-02-12 22:02:57,412 - RegMamba - INFO -   验证: Loss=0.9444, Recall=84.44%, RRE=6.8232°, RTE=0.7926m
