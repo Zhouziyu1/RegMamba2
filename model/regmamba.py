@@ -216,25 +216,101 @@ class BiMambaBlock(nn.Module):
         
         return feat_fused + residual
 
+class CrossAttentionBridge(nn.Module):
+    """
+    层间跨云交互桥接模块
+    在每个 BiMambaBlock 层之间插入，让 src 和 tgt 互相交流。
+    src 作为 Query，attend to tgt（K,V）→ 更新 src
+    tgt 作为 Query，attend to src（K,V）→ 更新 tgt
+    两个方向使用独立的 cross_attention，学习不同的对应关系。
+    """
+    def __init__(self, d_model: int, n_heads: int = 8, dropout: float = 0.1):
+        super().__init__()
+        # 独立的 LayerNorm，pre-norm 结构
+        self.norm_src = nn.LayerNorm(d_model)
+        self.norm_tgt = nn.LayerNorm(d_model)
+
+        # src→tgt 和 tgt→src 使用独立的 attention，参数不共享
+        # 这样两个方向能学到不同的对应关系模式
+        self.cross_attn_src2tgt = nn.MultiheadAttention(
+            d_model, n_heads, dropout=dropout, batch_first=True
+        )
+        self.cross_attn_tgt2src = nn.MultiheadAttention(
+            d_model, n_heads, dropout=dropout, batch_first=True
+        )
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, src: torch.Tensor, tgt: torch.Tensor):
+        """
+        Args:
+            src: [B, L, D]  当前层 src 特征
+            tgt: [B, L, D]  当前层 tgt 特征
+        Returns:
+            src_out: [B, L, D]  交互后 src 特征
+            tgt_out: [B, L, D]  交互后 tgt 特征
+        """
+        # pre-norm：先归一化，再计算 attention
+        src_normed = self.norm_src(src)
+        tgt_normed = self.norm_tgt(tgt)
+
+        # src attend to tgt：Q=src, K=V=tgt
+        # src 的每个 patch 去 tgt 中寻找对应的 patch
+        src_cross, _ = self.cross_attn_src2tgt(src_normed, tgt_normed, tgt_normed)
+        src_out = src + self.dropout(src_cross)  # 残差连接
+
+        # tgt attend to src：Q=tgt, K=V=src
+        # 注意：K,V 用的是 src_normed（交互前的值），保证两个方向的对称性
+        tgt_cross, _ = self.cross_attn_tgt2src(tgt_normed, src_normed, src_normed)
+        tgt_out = tgt + self.dropout(tgt_cross)  # 残差连接
+
+        return src_out, tgt_out
+
 
 class BiMambaBackbone(nn.Module):
-    """双向 Mamba 骨干网络"""
-    # 堆叠多个 BiMambaBlock，输出最终特征 [B,L,D] + 中间层特征列表（用于调试 / 多尺度）
-    def __init__(self, d_model, n_layers=4, d_state=16, d_conv=4, expand=2, dropout=0.1):
+    """双向 Mamba 骨干网络，含层间跨云交互桥接"""
+    def __init__(self, d_model, n_layers=4, n_heads=8, d_state=16, d_conv=4, expand=2, dropout=0.1):
         super().__init__()
         self.layers = nn.ModuleList([
             BiMambaBlock(d_model, d_state, d_conv, expand, dropout)
             for _ in range(n_layers)
         ])
         self.final_norm = nn.LayerNorm(d_model)
-        
-    def forward(self, x: torch.Tensor):
-        intermediate_feats = []
-        for layer in self.layers:
-            x = layer(x)
-            intermediate_feats.append(x)
-        out = self.final_norm(x)
-        return out, intermediate_feats
+
+        # 层间跨云交互桥：在前 n_layers-1 层之后各插一个
+        # 最后一层之后已有 BATInteractionModule 做交互，无需重复
+        self.cross_bridges = nn.ModuleList([
+            CrossAttentionBridge(d_model, n_heads, dropout)
+            for _ in range(n_layers - 1)   # 4层 → 3个桥
+        ])
+
+    def forward(self, src: torch.Tensor, tgt: torch.Tensor):
+        """
+        Args:
+            src: [B, L, D]  源点云 tokens
+            tgt: [B, L, D]  目标点云 tokens
+        Returns:
+            src_out, tgt_out: [B, L, D]
+            src_intermediate, tgt_intermediate: 各层输出列表（用于 DeepSupervision）
+        """
+        src_intermediate = []
+        tgt_intermediate = []
+
+        for i, layer in enumerate(self.layers):
+            # 每层 Mamba 各自处理（保留 intra-cloud 序列建模能力）
+            src = layer(src)
+            tgt = layer(tgt)
+
+            # 在前 n-1 层之后做跨云交互
+            if i < len(self.cross_bridges):
+                src, tgt = self.cross_bridges[i](src, tgt)
+
+            src_intermediate.append(src)
+            tgt_intermediate.append(tgt)
+
+        src_out = self.final_norm(src)
+        tgt_out = self.final_norm(tgt)
+
+        return src_out, tgt_out, src_intermediate, tgt_intermediate
 
 
 # ---------- Stage 3 & 4: BAT + Pose Decoder (引用前面的模块) ----------
@@ -406,6 +482,7 @@ class RegMamba(nn.Module):
         
         print("=" * 70)
         print("  RegMamba 模型初始化")
+        print("  设计者：周女士")
         print("=" * 70)
         print(f"\n{config}\n")
         
@@ -416,6 +493,7 @@ class RegMamba(nn.Module):
         self.backbone = BiMambaBackbone(
             d_model=config.d_model,
             n_layers=config.n_mamba_layers,
+            n_heads=config.n_heads,       # ← 新增这一行
             d_state=config.d_state,
             d_conv=config.d_conv,
             expand=config.expand,
@@ -470,9 +548,12 @@ class RegMamba(nn.Module):
         # src_tokens: [B, L, D], src_centroids: [B, L, 3]
         
         # ========== Stage 2: Bi-Mamba Backbone ==========
-        src_feat, src_intermediate = self.backbone(src_tokens)
-        tgt_feat, tgt_intermediate = self.backbone(tgt_tokens)
+        # src_feat, src_intermediate = self.backbone(src_tokens)
+        # tgt_feat, tgt_intermediate = self.backbone(tgt_tokens)
         # src_feat: [B, L, D]
+
+        src_feat, tgt_feat, src_intermediate, tgt_intermediate = self.backbone(
+        src_tokens, tgt_tokens)
         
         # ========== Stage 3: BAT Interaction Module ==========
         L_bat, src_enhanced, tgt_enhanced = self.bat_module(
@@ -486,6 +567,17 @@ class RegMamba(nn.Module):
         # quaternion: [B, 4], translation: [B, 3]
         
         # ========== 组装输出 ==========
+        '''
+        输出包含：
+            - quaternion: 旋转四元数 [B, 4]
+            - translation: 平移向量 [B, 3]
+            - correspondence_weights: 对应权重 [B, L, L]
+            - overlap_scores: 重叠分数 [B, L, 1]
+            - src_intermediate_feats: 源中间层特征 List
+            - tgt_intermediate_feats: 目标中间层特征 List
+            - src_centroids: 源 Patch 中心点 [B, L, 3]
+            - tgt_centroids: 目标 Patch 中心点 [B, L, 3]
+        '''
         output = {
             "quaternion": pose_output["quaternion"],
             "translation": pose_output["translation"],
