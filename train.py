@@ -5,7 +5,8 @@ RegMamba 训练脚本
 设计者：周女士
 
 使用方法:
-    python train.py --dataset kitti --batch_size 8 --max_epoch 100
+    python train.py  --ckpt /root/autodl-fs/Ragmamba/experiment/RegMamba_kitti_2026-03-01_16-18/checkpoints/best_model.pth --dataset kitti --batch_size 4 --max_epoch 100
+    python train.py     --dataset kitti     --lidar_root '/home/LY/ZiyuZhou/RegFormer-main/Reg_Mamaba/data/kitti/dataset/sequences'     --data_list '/home/LY/ZiyuZhou/RegFormer-main/Reg_Mamaba/data/kitti_list'     --num_points 10240     --voxel_size 0.3     --patch_size 32     --stride 16     --d_model 128     --n_mamba_layers 6     --n_heads 8     --dropout 0.1     --batch_size 4     --max_epoch 100     --learning_rate 0.0001     --optimizer Adam     --weight_decay 0.0001     --lr_stepsize 20     --lr_gamma 0.5     --lambda_rot 1.0     --lambda_trans 1.0     --lambda_overlap 0.5     --lambda_ds 0.1     --augment 0.5     --workers 4     --gpu 0
 ================================================================================
 """
 
@@ -51,6 +52,72 @@ def calc_error_np(pred_R, pred_t, gt_R, gt_t):
     L_rot = np.arccos(tmp) * 180 / np.pi
     L_trans = np.linalg.norm(pred_t - gt_t)
     return L_rot, L_trans
+
+
+def compute_patch_correspondence(src_centroids, tgt_centroids, gt_q, gt_t, dist_threshold=4.0):
+    """
+    用 GT 位姿计算 patch 级别的对应关系。
+
+    这是修复对比学习损失的关键函数。原来的代码假设 src 第 i 个 patch 对应 tgt 第 i 个
+    patch（对角线假设），但 src 和 tgt 各自独立做 Z-order 排序，这个假设是错误的。
+    正确做法：把 src centroids 用 GT 变换到 tgt 坐标系，再找最近邻 tgt patch。
+
+    四元数约定：[x, y, z, w]，w 在最后（scalar-last，与 scipy/KITTI 一致）。
+
+    Args:
+        src_centroids:  [B, L, 3]  src 的 patch 中心点，来自 output['src_centroids']
+        tgt_centroids:  [B, L, 3]  tgt 的 patch 中心点，来自 output['tgt_centroids']
+        gt_q:           [B, 4]     GT 四元数 [x, y, z, w]（cuda tensor）
+        gt_t:           [B, 3]     GT 平移向量（cuda tensor）
+        dist_threshold: float      最大匹配距离（米），超出则视为无有效对应（非重叠 patch）
+                                   KITTI 场景下 patch stride ≈ 16 × voxel_size ≈ 4.8m，
+                                   建议设为 4.0（保守），避免把相邻 patch 误判为对应
+
+    Returns:
+        correspondence: [B, L] LongTensor  每个 src patch 对应的 tgt patch 索引
+        valid_mask:     [B, L] BoolTensor   True = 该 patch 有有效对应（在重叠区域内）
+    """
+    B, L, _ = src_centroids.shape
+    device = src_centroids.device
+
+    # dtype 对齐：gt_q/gt_t 来自 DataLoader（float32），但 model 可能用 fp16
+    # 确保旋转矩阵 R 和变换结果与 src_centroids 的 dtype 一致，避免 bmm 类型不匹配
+    dtype = src_centroids.dtype
+    gt_q = gt_q.to(dtype=dtype)
+    gt_t = gt_t.to(dtype=dtype)
+
+    # 1. 四元数 [x, y, z, w] 转旋转矩阵（批量，纯 torch，无需 numpy）
+    q = torch.nn.functional.normalize(gt_q, p=2, dim=-1)  # [B, 4]
+    x, y, z, w = q[:, 0], q[:, 1], q[:, 2], q[:, 3]
+
+    R = torch.zeros(B, 3, 3, device=device, dtype=src_centroids.dtype)
+    R[:, 0, 0] = 1 - 2 * (y*y + z*z)
+    R[:, 0, 1] = 2 * (x*y - z*w)
+    R[:, 0, 2] = 2 * (x*z + y*w)
+    R[:, 1, 0] = 2 * (x*y + z*w)
+    R[:, 1, 1] = 1 - 2 * (x*x + z*z)
+    R[:, 1, 2] = 2 * (y*z - x*w)
+    R[:, 2, 0] = 2 * (x*z - y*w)
+    R[:, 2, 1] = 2 * (y*z + x*w)
+    R[:, 2, 2] = 1 - 2 * (x*x + y*y)
+    # R: [B, 3, 3]
+
+    # 2. 把 src centroids 变换到 tgt 坐标系
+    #    src_in_tgt = R @ src^T + t  =>  src @ R^T + t
+    src_transformed = torch.bmm(src_centroids, R.transpose(1, 2)) + gt_t.unsqueeze(1)
+    # src_transformed: [B, L, 3]
+
+    # 3. 计算变换后的 src centroids 到所有 tgt centroids 的距离
+    dist = torch.cdist(src_transformed, tgt_centroids)  # [B, L, L]
+
+    # 4. 每个 src patch 找最近的 tgt patch
+    min_dist, correspondence = dist.min(dim=-1)  # [B, L]
+
+    # 5. 超出距离阈值的 patch 视为非重叠（无有效对应）
+    valid_mask = min_dist < dist_threshold  # [B, L] bool
+
+    return correspondence, valid_mask
+
 
 def validate(model, val_loader, criterion, logger, args, excel_logger, epoch):
     """验证函数 - 包含完整评价指标并记录到Excel"""
@@ -215,20 +282,20 @@ def main():
        # print(f"✅ DEBUG: data_list = {args.data_list} (type: {type(args.data_list)})")
         train_dataset = KittiDataset(
             args.lidar_root, 'train', args.num_points,
-            args.voxel_size,args.data_list, args.augment
+            args.voxel_size,args.data_list, args.patch_size, args.stride, args.augment
         )
         val_dataset = KittiDataset(
             args.lidar_root, 'val', args.num_points,
-            args.voxel_size,args.data_list, augment=0.0
+            args.voxel_size,args.data_list, args.patch_size, args.stride, augment=0.0
         )
     elif args.dataset == 'nuscenes':
         train_dataset = NuscenesDataset(
             args.lidar_root, 'train', args.num_points,
-            args.voxel_size, args.data_list, args.augment
+            args.voxel_size, args.data_list, args.patch_size, args.stride, args.augment
         )
         val_dataset = NuscenesDataset(
             args.lidar_root, 'val', args.num_points,
-            args.voxel_size, args.data_list, augment=0.0
+            args.voxel_size, args.data_list, args.patch_size, args.stride, augment=0.0
         )
     else:
         raise ValueError(f"不支持的数据集: {args.dataset}")
@@ -245,7 +312,7 @@ def main():
     train_loader = torch.utils.data.DataLoader(
     train_dataset,
     batch_size=args.batch_size,   # 不要硬编码 1
-    shuffle=True,#是否打乱数据
+    shuffle=True,
     num_workers=args.workers,
     pin_memory=True,
     drop_last=True # 推荐，保证 batch 尺寸一致
@@ -286,7 +353,7 @@ def main():
         lambda_overlap=args.lambda_overlap,
         lambda_ds=args.lambda_ds,
         use_deep_supervision=args.use_deep_supervision,
-        use_overlap_loss=args.use_overlap_loss,
+        use_overlap_loss=True,
     )
     
     # ========== 优化器 ==========
@@ -305,11 +372,16 @@ def main():
         )
     
     # 学习率调度器
-    scheduler = torch.optim.lr_scheduler.StepLR(
+    # 使用 CosineAnnealingLR 替代 StepLR：
+    # StepLR 每隔固定步长乘以 gamma（如 0.5），会导致 LR 指数崩塌，
+    # 100 轮后 LR 可低至 1e-9，模型参数实际冻结。
+    # CosineAnnealingLR 在 T_max 轮内平滑衰减到 eta_min，保证后期仍有学习能力。
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer,
-        step_size=args.lr_stepsize,
-        gamma=args.lr_gamma,
+        T_max=args.max_epoch,   # 总训练轮数
+        eta_min=1e-6,           # 最低学习率，保证训练末期仍有梯度
     )
+
     
     # ========== 加载检查点 ==========
     start_epoch = 0
@@ -349,11 +421,33 @@ def main():
             tgt_points = batch_data['tgt_points'].cuda()
             gt_q = batch_data['gt_quaternion'].cuda()
             gt_t = batch_data['gt_translation'].cuda()
+            gt_overlap = batch_data['gt_overlap'].cuda().float()  # [B, L]，必须float，BCE不接受bool/long
             
-            # 前向传播
+            # ===== 前向传播 =====
             output = model(src_points, tgt_points)
-            
-            # 计算损失
+            # output 包含：
+            #   quaternion [B,4], translation [B,3]
+            #   src_intermediate_feats: List[Tensor[B,L,D]]  (4层Mamba中间特征)
+            #   tgt_intermediate_feats: List[Tensor[B,L,D]]
+            #   src_centroids [B,L,3], tgt_centroids [B,L,3]  (patch中心点)
+
+            # ===== 计算 GT patch 对应关系（修复对比学习的核心）=====
+            # 原来的代码没有传 correspondence，InfoNCELoss 退化为对角线假设：
+            # 假设 src[i] 对应 tgt[i]，但 src/tgt 各自独立 Z-order 排序，
+            # 这个假设在有旋转的情况下完全错误，导致 Feature Loss 始终在随机猜测水平。
+            # 现在用 GT 位姿把 src centroids 变换到 tgt 坐标系，找真正对应的 patch。
+            with torch.no_grad():
+                correspondence, valid_mask = compute_patch_correspondence(
+                    src_centroids=output['src_centroids'],   # [B, L, 3]
+                    tgt_centroids=output['tgt_centroids'],   # [B, L, 3]
+                    gt_q=gt_q,                               # [B, 4]，[x,y,z,w] 格式
+                    gt_t=gt_t,                               # [B, 3]
+                    dist_threshold=4.0,                      # 单位：米，超出视为非重叠区域
+                )
+            # correspondence: [B, L] LongTensor，每个 src patch 对应的 tgt patch 索引
+            # valid_mask:     [B, L] BoolTensor，True = 有有效对应（在重叠区域内）
+
+            # ===== 计算损失 =====
             loss_dict = criterion(
                 pred_q=output['quaternion'],
                 pred_t=output['translation'],
@@ -362,6 +456,9 @@ def main():
                 overlap_scores=output.get('overlap_scores'),
                 src_intermediate=output.get('src_intermediate_feats'),
                 tgt_intermediate=output.get('tgt_intermediate_feats'),
+                gt_overlap=gt_overlap,
+                correspondence=correspondence,  # GT patch 对应索引 [B, L]
+                valid_mask=valid_mask,          # 有效对应掩码 [B, L]
             )
             
             loss = loss_dict['total_loss']
@@ -401,6 +498,13 @@ def main():
         avg_ds_loss = total_ds_loss / n_batches
         avg_feature_losses = [fl / n_batches for fl in feature_losses_sum]
         current_lr = optimizer.param_groups[0]['lr']
+
+        # ===== 更新训练历史记录 =====
+        history['train_loss'].append(avg_loss)
+        history['rot_loss'].append(avg_rot_loss)
+        history['trans_loss'].append(avg_trans_loss)
+        history['learning_rate'].append(current_lr)
+
         
         # ===== 记录到 Excel =====
         excel_logger.log_train_epoch(
@@ -420,10 +524,18 @@ def main():
         
         # 学习率更新
         scheduler.step()
-        
+        val_epochs = list(range(args.eval_interval, len(history['train_loss']) + 1, args.eval_interval))
+
         # ===== 验证 =====
         if (epoch + 1) % args.eval_interval == 0:
             val_results = validate(model, val_loader, criterion, logger, args, excel_logger, epoch + 1)
+
+            # 记录验证指标到历史
+            history['val_loss'].append(val_results['loss'])
+            history['val_rot_error'].append(val_results['rot_error'])
+            history['val_trans_error'].append(val_results['trans_error'])
+            history['val_recall'].append(val_results['recall'])
+
             
             # 保存最优模型
             if val_results['recall'] > best_recall:
@@ -452,6 +564,7 @@ def main():
             visualize_training_curves(
                 train_losses=history['train_loss'],
                 val_losses=history['val_loss'] if history['val_loss'] else None,
+                val_epochs=val_epochs,   
                 rot_losses=history['rot_loss'],
                 trans_losses=history['trans_loss'],
                 learning_rates=history['learning_rate'],
