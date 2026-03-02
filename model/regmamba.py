@@ -382,13 +382,97 @@ class BATInteractionModule(nn.Module):
         return L_bat, src_enhanced, tgt_enhanced
 
 
+# =============================================================================
+# 辅助函数：旋转矩阵 → 四元数 [x, y, z, w]（scalar-last，与 KITTI 数据集一致）
+# =============================================================================
+
+def _rot_mat_to_quat(R: torch.Tensor) -> torch.Tensor:
+    """
+    旋转矩阵批量转四元数（Shepperd 方法，全分支 batched，数值稳定）
+
+    Args:
+        R: 旋转矩阵 [B, 3, 3]
+
+    Returns:
+        q: 四元数 [B, 4]，格式 [x, y, z, w]（scalar-last），已 L2 归一化
+    """
+    B = R.shape[0]
+    trace = R[:, 0, 0] + R[:, 1, 1] + R[:, 2, 2]
+
+    # 分支 0: w 最大 (trace > 0)
+    s0 = torch.sqrt(torch.clamp(trace + 1.0, min=1e-10)) * 2
+    q0 = torch.stack([
+        (R[:, 2, 1] - R[:, 1, 2]) / s0,
+        (R[:, 0, 2] - R[:, 2, 0]) / s0,
+        (R[:, 1, 0] - R[:, 0, 1]) / s0,
+        0.25 * s0,
+    ], dim=-1)
+
+    # 分支 1: x 最大
+    s1 = torch.sqrt(torch.clamp(1.0 + R[:, 0, 0] - R[:, 1, 1] - R[:, 2, 2], min=1e-10)) * 2
+    q1 = torch.stack([
+        0.25 * s1,
+        (R[:, 0, 1] + R[:, 1, 0]) / s1,
+        (R[:, 0, 2] + R[:, 2, 0]) / s1,
+        (R[:, 2, 1] - R[:, 1, 2]) / s1,
+    ], dim=-1)
+
+    # 分支 2: y 最大
+    s2 = torch.sqrt(torch.clamp(1.0 + R[:, 1, 1] - R[:, 0, 0] - R[:, 2, 2], min=1e-10)) * 2
+    q2 = torch.stack([
+        (R[:, 0, 1] + R[:, 1, 0]) / s2,
+        0.25 * s2,
+        (R[:, 1, 2] + R[:, 2, 1]) / s2,
+        (R[:, 0, 2] - R[:, 2, 0]) / s2,
+    ], dim=-1)
+
+    # 分支 3: z 最大
+    s3 = torch.sqrt(torch.clamp(1.0 + R[:, 2, 2] - R[:, 0, 0] - R[:, 1, 1], min=1e-10)) * 2
+    q3 = torch.stack([
+        (R[:, 0, 2] + R[:, 2, 0]) / s3,
+        (R[:, 1, 2] + R[:, 2, 1]) / s3,
+        0.25 * s3,
+        (R[:, 1, 0] - R[:, 0, 1]) / s3,
+    ], dim=-1)
+
+    cond1 = (trace > 0).unsqueeze(-1).expand_as(q0)
+    cond2 = ((R[:, 0, 0] > R[:, 1, 1]) & (R[:, 0, 0] > R[:, 2, 2])).unsqueeze(-1).expand_as(q0)
+    cond3 = (R[:, 1, 1] > R[:, 2, 2]).unsqueeze(-1).expand_as(q0)
+
+    q = torch.where(cond1, q0,
+        torch.where(cond2, q1,
+        torch.where(cond3, q2, q3)))
+
+    return F.normalize(q, p=2, dim=-1)
+
+
 class BATPoseDecoder(nn.Module):
-    """BAT 位姿解码器"""
+    """
+    BAT 位姿解码器 v2 — 可微加权 SVD
+
+    用 SVD 解析解替换原来的 MLP 旋转回归，彻底解除 SO(3) 学习天花板。
+
+    流程:
+        L_bat [B, N, M, 2C+12]
+          -> corr_mlp    -> corr_weights   [B, N, M]  (softmax, 软对应权重)
+          -> overlap_mlp -> overlap_scores [B, N, 1]  (sigmoid, 重叠置信度/点权重)
+        + src_centroids  [B, N, 3]
+        + tgt_centroids  [B, M, 3]
+          -> WeightedSVD -> R [B,3,3] -> quaternion [B,4]
+                        -> translation [B,3]
+
+    梯度路径:
+        QuaternionLoss(q)
+          -> rot_mat_to_quat (closed-form, 可微)
+          -> SVD (torch.linalg.svd, 已支持反传)
+          -> H = f(corr_weights, overlap_scores, centroids)
+          -> corr_mlp, overlap_mlp 收到梯度
+    """
     def __init__(self, bat_feature_dim: int, global_feat_dim: int = 512, dropout: float = 0.1):
         super().__init__()
-        
-        # 软对应
-        # MLP 预测 Patch 间对应权重（softmax 归一化）
+        # global_feat_dim, dropout 保留以兼容旧 __init__ 调用，内部不再使用
+
+        # 软对应评分 MLP: [B, N, M, D] -> [B, N, M, 1]
         self.corr_mlp = nn.Sequential(
             nn.Linear(bat_feature_dim, 256),
             nn.ReLU(),
@@ -396,67 +480,93 @@ class BATPoseDecoder(nn.Module):
             nn.ReLU(),
             nn.Linear(128, 1),
         )
-        
-        # 重叠分数
-        # MLP+Sigmoid 预测 Patch 重叠概率
+
+        # 重叠分数 MLP: 从聚合特征 [B, N, D] -> [B, N, 1]
+        # 同时服务于：(a) SVD 点权重  (b) OverlapLoss GT 监督
         self.overlap_mlp = nn.Sequential(
             nn.Linear(bat_feature_dim, 128),
             nn.ReLU(),
             nn.Linear(128, 1),
             nn.Sigmoid(),
         )
-        
-        # 特征压缩
-        # MLP 压缩 BAT 特征维度，便于后续加权聚合
-        self.feat_compress = nn.Sequential(
-            nn.Linear(bat_feature_dim, global_feat_dim),
-            nn.ReLU(),
-            nn.Linear(global_feat_dim, global_feat_dim),
-        )
-        
-        # 位姿回归
-        self.pose_mlp = nn.Sequential(
-            nn.Linear(global_feat_dim, 1024),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(1024, 512),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-        )
-        self.quat_head = nn.Linear(256, 4)
-        self.trans_head = nn.Linear(256, 3)
-        
-    def forward(self, L_bat: torch.Tensor):
+
+    def forward(
+        self,
+        L_bat:          torch.Tensor,   # [B, N, M, 2C+12]
+        src_centroids:  torch.Tensor,   # [B, N, 3]  src patch 中心点（来自 PatchEmbedding）
+        tgt_centroids:  torch.Tensor,   # [B, M, 3]  tgt patch 中心点（来自 PatchEmbedding）
+    ) -> Dict[str, torch.Tensor]:
         B, N, M, D = L_bat.shape
-        
-        # 软对应
-        corr_scores = self.corr_mlp(L_bat).squeeze(-1)
-        corr_weights = F.softmax(corr_scores, dim=2)
-        
-        # 加权聚合
-        matched_features = (L_bat * corr_weights.unsqueeze(-1)).sum(dim=2)
-        
-        # 重叠分数
-        overlap_scores = self.overlap_mlp(matched_features)
-        
-        # 全局特征
-        compressed = self.feat_compress(matched_features)
-        weighted_sum = (compressed * overlap_scores).sum(dim=1)
-        score_sum = overlap_scores.sum(dim=1).clamp(min=1e-8)
-        global_feat = weighted_sum / score_sum
-        
-        # 位姿回归
-        pose_feat = self.pose_mlp(global_feat)
-        quaternion = F.normalize(self.quat_head(pose_feat), p=2, dim=-1)
-        translation = self.trans_head(pose_feat)
-        
+        device, dtype = L_bat.device, L_bat.dtype
+        eps = 1e-8
+
+        # ── Step 1: 软对应权重 ──────────────────────────────────────────
+        corr_scores  = self.corr_mlp(L_bat).squeeze(-1)        # [B, N, M]
+        corr_weights = F.softmax(corr_scores, dim=2)            # [B, N, M]
+
+        # ── Step 2: 重叠分数（用聚合特征预测）──────────────────────────
+        matched_features = (L_bat * corr_weights.unsqueeze(-1)).sum(dim=2)  # [B, N, D]
+        overlap_scores   = self.overlap_mlp(matched_features)               # [B, N, 1]
+
+        # ── Step 3: 软 tgt 位置 ─────────────────────────────────────────
+        # 每个 src patch 对应的期望 tgt 位置
+        # [B, N, M] @ [B, M, 3] -> [B, N, 3]
+        tgt_matched = torch.bmm(corr_weights, tgt_centroids)
+
+        # ── Step 4: 归一化点权重（overlap_scores → SVD 权重）────────────
+        w = overlap_scores.squeeze(-1)                          # [B, N]
+        w_norm = w / w.sum(dim=1, keepdim=True).clamp(min=eps) # [B, N]
+
+        # ── Step 5: 加权质心 ─────────────────────────────────────────────
+        src_bar = torch.einsum('bn,bnc->bc', w_norm, src_centroids)  # [B, 3]
+        tgt_bar = torch.einsum('bn,bnc->bc', w_norm, tgt_matched)    # [B, 3]
+
+        # ── Step 6: 中心化 ───────────────────────────────────────────────
+        src_c = src_centroids - src_bar.unsqueeze(1)   # [B, N, 3]
+        tgt_c = tgt_matched   - tgt_bar.unsqueeze(1)   # [B, N, 3]
+
+        # ── Step 7: 加权叉积矩阵 H ──────────────────────────────────────
+        w_exp = w_norm.unsqueeze(-1)                   # [B, N, 1]
+        H = torch.bmm(
+            (src_c * w_exp).transpose(1, 2),           # [B, 3, N]
+            tgt_c,                                     # [B, N, 3]
+        )                                              # [B, 3, 3]
+
+        # ── Step 8: SVD + 反射修正 ───────────────────────────────────────
+        try:
+            U, S, Vh = torch.linalg.svd(H)            # U, Vh: [B, 3, 3]
+        except RuntimeError:
+            # SVD 不收敛（极罕见：全零点云等退化情况）
+            R = torch.eye(3, device=device, dtype=dtype).unsqueeze(0).expand(B, -1, -1).clone()
+            t = tgt_bar - src_bar
+            q = torch.zeros(B, 4, device=device, dtype=dtype)
+            q[:, 3] = 1.0
+            return {"quaternion": q, "translation": t, "rotation_matrix": R,
+                    "correspondence_weights": corr_weights, "overlap_scores": overlap_scores}
+
+        # 候选旋转
+        R_raw = torch.bmm(Vh.transpose(-2, -1), U.transpose(-2, -1))  # [B, 3, 3]
+
+        # 反射修正：使 det(R) = +1
+        det_sign = torch.linalg.det(R_raw).sign()                     # [B]
+        correction = torch.ones(B, 3, device=device, dtype=dtype)
+        correction[:, 2] = det_sign
+        Vh_fix = Vh * correction.unsqueeze(-1)                         # [B, 3, 3]
+        R = torch.bmm(Vh_fix.transpose(-2, -1), U.transpose(-2, -1))  # [B, 3, 3]
+
+        # ── Step 9: 平移 ─────────────────────────────────────────────────
+        # t = tgt_bar - R @ src_bar
+        translation = tgt_bar - torch.bmm(R, src_bar.unsqueeze(-1)).squeeze(-1)  # [B, 3]
+
+        # ── Step 10: R → 四元数（用于 QuaternionLoss）───────────────────
+        quaternion = _rot_mat_to_quat(R)                               # [B, 4]
+
         return {
-            "quaternion": quaternion,
-            "translation": translation,
-            "correspondence_weights": corr_weights,
-            "overlap_scores": overlap_scores,
+            "quaternion":             quaternion,       # [B, 4]
+            "translation":            translation,      # [B, 3]
+            "rotation_matrix":        R,                # [B, 3, 3]（新增，调试用）
+            "correspondence_weights": corr_weights,     # [B, N, M]
+            "overlap_scores":         overlap_scores,   # [B, N, 1]
         }
 
 
@@ -562,8 +672,9 @@ class RegMamba(nn.Module):
         )
         # L_bat: [B, L, L, 2D+12]
         
-        # ========== Stage 4: Pose Decoder ==========
-        pose_output = self.pose_decoder(L_bat)
+        # ========== Stage 4: Pose Decoder (SVD) ==========
+        # 新版 BATPoseDecoder 需要 src/tgt centroids 作为 SVD 的点坐标输入
+        pose_output = self.pose_decoder(L_bat, src_centroids, tgt_centroids)
         # quaternion: [B, 4], translation: [B, 3]
         
         # ========== 组装输出 ==========
