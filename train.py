@@ -5,8 +5,10 @@ RegMamba 训练脚本
 设计者：周女士
 
 使用方法:
-    python train.py  --ckpt /root/autodl-fs/Ragmamba/experiment/RegMamba_kitti_2026-03-01_16-18/checkpoints/best_model.pth --dataset kitti --batch_size 4 --max_epoch 100
-    python train.py     --dataset kitti     --lidar_root '/home/LY/ZiyuZhou/RegFormer-main/Reg_Mamaba/data/kitti/dataset/sequences'     --data_list '/home/LY/ZiyuZhou/RegFormer-main/Reg_Mamaba/data/kitti_list'     --num_points 10240     --voxel_size 0.3     --patch_size 32     --stride 16     --d_model 128     --n_mamba_layers 6     --n_heads 8     --dropout 0.1     --batch_size 4     --max_epoch 100     --learning_rate 0.0001     --optimizer Adam     --weight_decay 0.0001     --lr_stepsize 20     --lr_gamma 0.5     --lambda_rot 1.0     --lambda_trans 1.0     --lambda_overlap 0.5     --lambda_ds 0.1     --augment 0.5     --workers 4     --gpu 0
+python train.py  --dataset kitti --batch_size 4 --max_epoch 100
+nohup python train.py --ckpt /root/autodl-fs/Ragmamba/experiment/RegMamba_kitti_2026-03-02_12-40/checkpoints/best_model.pth --dataset kitti  --batch_size 4 --max_epoch 100; shutdown > output.log 2>&1 &
+python train.py  --ckpt /root/autodl-fs/Ragmamba/experiment/RegMamba_kitti_2026-03-02_12-40/checkpoints/best_model.pth --dataset kitti --batch_size 4 --max_epoch 90 && shutdown
+/root/autodl-fs/Ragmamba/experiment/RegMamba_kitti_2026-03-02_20-30/checkpoints/best_model.pth    python train.py     --dataset kitti     --lidar_root '/home/LY/ZiyuZhou/RegFormer-main/Reg_Mamaba/data/kitti/dataset/sequences'     --data_list '/home/LY/ZiyuZhou/RegFormer-main/Reg_Mamaba/data/kitti_list'     --num_points 10240     --voxel_size 0.3     --patch_size 32     --stride 16     --d_model 128     --n_mamba_layers 6     --n_heads 8     --dropout 0.1     --batch_size 4     --max_epoch 100     --learning_rate 0.0001     --optimizer Adam     --weight_decay 0.0001     --lr_stepsize 20     --lr_gamma 0.5     --lambda_rot 1.0     --lambda_trans 1.0     --lambda_overlap 0.5     --lambda_ds 0.1     --augment 0.5     --workers 4     --gpu 0
 ================================================================================
 """
 
@@ -34,7 +36,7 @@ from data.nuscenes_data import NuscenesDataset
 # 导入工具
 from tools.logger_tools import log_print, creat_logger
 from tools.euler_tools import quat2mat
-from tools.metrics import RegistrationMetrics, quat2mat
+# from tools.metrics import RegistrationMetrics, quat2mat
 from tools.visualization import (
     visualize_training_curves,
     visualize_error_distribution,
@@ -166,8 +168,48 @@ def validate(model, val_loader, criterion, logger, args, excel_logger, epoch):
             src_np = src_points.cpu().numpy()
             
             for i in range(src_points.size(0)):
-                pred_R = quat2mat(pred_q_np[i])
-                gt_R = quat2mat(gt_q_np[i])
+                '''
+                ### 诊断四元数格式问题：比较 [x,y,z,w] 和 [w,x,y,z] 两种方式的旋转误差，看看哪个更合-----------
+                gt_q_i = gt_q_np[i]
+                gt_Tr = batch_data['Tr'][i].cpu().numpy()  # 4x4 原始位姿矩阵
+
+                # 方法 1：直接从 Tr 取旋转矩阵（绝对正确的 ground truth）
+                gt_R_from_Tr = gt_Tr[:3, :3]
+
+                # 方法 2：用 gt_quaternion 按 [w,x,y,z] 解析
+                w, x, y, z = gt_q_i[0], gt_q_i[1], gt_q_i[2], gt_q_i[3]
+                R_wxyz = np.array([
+                    [1 - 2*(y*y + z*z),   2*(x*y - z*w),   2*(x*z + y*w)],
+                    [2*(x*y + z*w),   1 - 2*(x*x + z*z),   2*(y*z - x*w)],
+                    [2*(x*z - y*w),   2*(y*z + x*w),   1 - 2*(x*x + y*y)]
+                ])
+
+                # 方法 3：用 gt_quaternion 按 [x,y,z,w] 解析
+                x2, y2, z2, w2 = gt_q_i[0], gt_q_i[1], gt_q_i[2], gt_q_i[3]
+                R_xyzw = np.array([
+                    [1 - 2*(y2*y2 + z2*z2),   2*(x2*y2 - z2*w2),   2*(x2*z2 + y2*w2)],
+                    [2*(x2*y2 + z2*w2),   1 - 2*(x2*x2 + z2*z2),   2*(y2*z2 - x2*w2)],
+                    [2*(x2*z2 - y2*w2),   2*(y2*z2 + x2*w2),   1 - 2*(x2*x2 + y2*y2)]
+                ])
+
+                def r_err(R_pred, R_gt):
+                    R_diff = np.dot(R_pred.T, R_gt)
+                    trace = np.clip((np.trace(R_diff) - 1) / 2, -1.0, 1.0)
+                    return np.arccos(trace) * 180.0 / np.pi
+
+                print(f"\n=== Sample {i} ===")
+                print(f"  gt_q = {gt_q_i}")
+                print(f"  gt_R_from_Tr (direct):\n{gt_R_from_Tr}")
+                print(f"  Decoded as [w,x,y,z] err vs Tr: {r_err(R_wxyz, gt_R_from_Tr):.4f}°")
+                print(f"  Decoded as [x,y,z,w] err vs Tr: {r_err(R_xyzw, gt_R_from_Tr):.4f}°")
+                ###---------------------------------------------------------
+                '''
+
+                pq = pred_q_np[i]
+                pred_R = quat2mat(np.array([pq[3], pq[0], pq[1], pq[2]]))  # xyzw → wxyz
+                
+                gq = gt_q_np[i]
+                gt_R = quat2mat(np.array([gq[3], gq[0], gq[1], gq[2]]))    # xyzw → wxyz
                 
                 # 旋转误差
                 R_diff = np.dot(pred_R.T, gt_R)
