@@ -1,0 +1,762 @@
+============================================================
+Epoch: 10
+============================================================
+
+[Registration Recall]
+RR@(0.6m, 2°):  14.6743%
+RR@(1.0m, 3°):  41.0500%
+RR@(2.0m, 5°):  76.3441%  [Standard]
+
+[Translation Error - All Samples]
+Mean:       1.4958 m
+Median:     1.0424 m
+RMSE:       2.1280 m
+
+[Rotation Error - All Samples]
+Mean:       2.1714 deg
+Median:     1.4352 deg
+RMSE:       3.1089 deg
+
+[Timing]
+FPS:        13.45 pairs/s
+
+============================================================
+Epoch: 20
+============================================================
+
+[Registration Recall]
+RR@(0.6m, 2°):  30.1708%
+RR@(1.0m, 3°):  52.7514%
+RR@(2.0m, 5°):  79.0006%  [Standard]
+
+[Translation Error - All Samples]
+Mean:       1.1905 m
+Median:     0.8322 m
+RMSE:       1.6057 m
+
+[Rotation Error - All Samples]
+Mean:       1.9528 deg
+Median:     1.1516 deg
+RMSE:       3.3560 deg
+
+[Timing]
+FPS:        13.14 pairs/s
+
+============================================================
+Epoch: 30
+============================================================
+
+[Registration Recall]
+RR@(0.6m, 2°):  37.7609%
+RR@(1.0m, 3°):  61.7331%
+RR@(2.0m, 5°):  85.8950%  [Standard]
+
+[Translation Error - All Samples]
+Mean:       0.9914 m
+Median:     0.7057 m
+RMSE:       1.3556 m
+
+[Rotation Error - All Samples]
+Mean:       1.9555 deg
+Median:     1.0589 deg
+RMSE:       4.3905 deg
+
+[Timing]
+FPS:        12.21 pairs/s
+
+============================================================
+Epoch: 40
+============================================================
+
+[Registration Recall]
+RR@(0.6m, 2°):  51.3599%
+RR@(1.0m, 3°):  73.1815%
+RR@(2.0m, 5°):  88.0455%  [Standard]
+
+[Translation Error - All Samples]
+Mean:       0.8924 m
+Median:     0.5492 m
+RMSE:       1.3636 m
+
+[Rotation Error - All Samples]
+Mean:       1.5918 deg
+Median:     0.8669 deg
+RMSE:       3.5513 deg
+
+[Timing]
+FPS:        11.83 pairs/s
+Total:      1581 samples
+Success:    1392 samples
+
+============================================================
+Epoch: 50
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  60.5313%
+RR@(1.0m,  3°):  74.8261%
+RR@(2.0m,  5°):  91.0816%  [Standard]
+RR@(5.0m, 10°):  99.4940%
+
+[Translation Error]
+RTE_AVG:        0.7149 m
+RTE_STD:        0.7045 m
+RTE_Median:     0.4370 m
+RTE_RMSE:       1.0037 m
+
+[Rotation Error]
+RRE_AVG:        1.1143 deg
+RRE_STD:        1.3365 deg
+RRE_Median:     0.7524 deg
+RRE_RMSE:       1.7400 deg
+
+[Timing]
+FPS:            12.34 pairs/s
+MT:             81.01 ms/pair
+NT:             0.6751 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1440 samples
+Success Rate:   91.08%
+
+============================================================
+Epoch: 60
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  82.9855%
+RR@(1.0m,  3°):  92.1569%
+RR@(2.0m,  5°):  98.2290%  [Standard]
+RR@(5.0m, 10°):  99.1777%
+
+[Translation Error]
+RTE_AVG:        0.3973 m
+RTE_STD:        0.4019 m
+RTE_Median:     0.2839 m
+RTE_RMSE:       0.5651 m
+
+[Rotation Error]
+RRE_AVG:        0.9417 deg
+RRE_STD:        1.6161 deg
+RRE_Median:     0.6378 deg
+RRE_RMSE:       1.8705 deg
+
+[Timing]
+FPS:            13.01 pairs/s
+MT:             76.85 ms/pair
+NT:             0.6405 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1553 samples
+Success Rate:   98.23%
+
+============================================================
+Epoch: 70
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  89.5636%
+RR@(1.0m,  3°):  95.1297%
+RR@(2.0m,  5°):  98.4820%  [Standard]
+RR@(5.0m, 10°):  99.3675%
+
+[Translation Error]
+RTE_AVG:        0.3150 m
+RTE_STD:        0.3521 m
+RTE_Median:     0.2199 m
+RTE_RMSE:       0.4725 m
+
+[Rotation Error]
+RRE_AVG:        0.7537 deg
+RRE_STD:        1.2282 deg
+RRE_Median:     0.5280 deg
+RRE_RMSE:       1.4410 deg
+
+[Timing]
+FPS:            12.89 pairs/s
+MT:             77.55 ms/pair
+NT:             0.6463 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1557 samples
+Success Rate:   98.48%
+
+============================================================
+Epoch: 80
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  92.3466%
+RR@(1.0m,  3°):  96.1417%
+RR@(2.0m,  5°):  98.8615%  [Standard]
+RR@(5.0m, 10°):  99.3042%
+
+[Translation Error]
+RTE_AVG:        0.2413 m
+RTE_STD:        0.2971 m
+RTE_Median:     0.1561 m
+RTE_RMSE:       0.3827 m
+
+[Rotation Error]
+RRE_AVG:        0.6938 deg
+RRE_STD:        1.3816 deg
+RRE_Median:     0.4554 deg
+RRE_RMSE:       1.5460 deg
+
+[Timing]
+FPS:            13.31 pairs/s
+MT:             75.12 ms/pair
+NT:             0.6260 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1563 samples
+Success Rate:   98.86%
+
+============================================================
+Epoch: 90
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  93.4851%
+RR@(1.0m,  3°):  96.6477%
+RR@(2.0m,  5°):  98.6085%  [Standard]
+RR@(5.0m, 10°):  99.3675%
+
+[Translation Error]
+RTE_AVG:        0.2157 m
+RTE_STD:        0.2862 m
+RTE_Median:     0.1320 m
+RTE_RMSE:       0.3584 m
+
+[Rotation Error]
+RRE_AVG:        0.6621 deg
+RRE_STD:        1.3447 deg
+RRE_Median:     0.4290 deg
+RRE_RMSE:       1.4989 deg
+
+[Timing]
+FPS:            12.24 pairs/s
+MT:             81.71 ms/pair
+NT:             0.6809 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1559 samples
+Success Rate:   98.61%
+
+============================================================
+Epoch: 100
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  93.3586%
+RR@(1.0m,  3°):  96.3947%
+RR@(2.0m,  5°):  98.9247%  [Standard]
+RR@(5.0m, 10°):  99.4307%
+
+[Translation Error]
+RTE_AVG:        0.2233 m
+RTE_STD:        0.3100 m
+RTE_Median:     0.1339 m
+RTE_RMSE:       0.3821 m
+
+[Rotation Error]
+RRE_AVG:        0.5607 deg
+RRE_STD:        1.1545 deg
+RRE_Median:     0.3438 deg
+RRE_RMSE:       1.2834 deg
+
+[Timing]
+FPS:            12.48 pairs/s
+MT:             80.14 ms/pair
+NT:             0.6679 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1564 samples
+Success Rate:   98.92%
+
+============================================================
+Epoch: 110
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  94.2441%
+RR@(1.0m,  3°):  97.1537%
+RR@(2.0m,  5°):  98.9880%  [Standard]
+RR@(5.0m, 10°):  99.4940%
+
+[Translation Error]
+RTE_AVG:        0.2022 m
+RTE_STD:        0.2701 m
+RTE_Median:     0.1244 m
+RTE_RMSE:       0.3374 m
+
+[Rotation Error]
+RRE_AVG:        0.5369 deg
+RRE_STD:        1.1903 deg
+RRE_Median:     0.3126 deg
+RRE_RMSE:       1.3058 deg
+
+[Timing]
+FPS:            13.25 pairs/s
+MT:             75.50 ms/pair
+NT:             0.6292 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1565 samples
+Success Rate:   98.99%
+
+============================================================
+Epoch: 120
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  94.7502%
+RR@(1.0m,  3°):  97.6597%
+RR@(2.0m,  5°):  98.7350%  [Standard]
+RR@(5.0m, 10°):  99.3675%
+
+[Translation Error]
+RTE_AVG:        0.1827 m
+RTE_STD:        0.2634 m
+RTE_Median:     0.1138 m
+RTE_RMSE:       0.3206 m
+
+[Rotation Error]
+RRE_AVG:        0.5133 deg
+RRE_STD:        1.2776 deg
+RRE_Median:     0.2910 deg
+RRE_RMSE:       1.3769 deg
+
+[Timing]
+FPS:            12.98 pairs/s
+MT:             77.02 ms/pair
+NT:             0.6418 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1561 samples
+Success Rate:   98.73%
+
+============================================================
+Epoch: 130
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  94.3707%
+RR@(1.0m,  3°):  96.9639%
+RR@(2.0m,  5°):  98.8615%  [Standard]
+RR@(5.0m, 10°):  99.4307%
+
+[Translation Error]
+RTE_AVG:        0.1953 m
+RTE_STD:        0.2757 m
+RTE_Median:     0.1160 m
+RTE_RMSE:       0.3379 m
+
+[Rotation Error]
+RRE_AVG:        0.5153 deg
+RRE_STD:        1.2052 deg
+RRE_Median:     0.2973 deg
+RRE_RMSE:       1.3107 deg
+
+[Timing]
+FPS:            13.27 pairs/s
+MT:             75.34 ms/pair
+NT:             0.6278 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1563 samples
+Success Rate:   98.86%
+
+============================================================
+Epoch: 140
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  95.5092%
+RR@(1.0m,  3°):  97.4700%
+RR@(2.0m,  5°):  98.9880%  [Standard]
+RR@(5.0m, 10°):  99.4940%
+
+[Translation Error]
+RTE_AVG:        0.1763 m
+RTE_STD:        0.2453 m
+RTE_Median:     0.1100 m
+RTE_RMSE:       0.3021 m
+
+[Rotation Error]
+RRE_AVG:        0.4844 deg
+RRE_STD:        1.1826 deg
+RRE_Median:     0.2732 deg
+RRE_RMSE:       1.2780 deg
+
+[Timing]
+FPS:            12.52 pairs/s
+MT:             79.87 ms/pair
+NT:             0.6656 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1565 samples
+Success Rate:   98.99%
+
+============================================================
+Epoch: 150
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  95.6357%
+RR@(1.0m,  3°):  97.5965%
+RR@(2.0m,  5°):  99.1777%  [Standard]
+RR@(5.0m, 10°):  99.4940%
+
+[Translation Error]
+RTE_AVG:        0.1711 m
+RTE_STD:        0.2202 m
+RTE_Median:     0.1071 m
+RTE_RMSE:       0.2789 m
+
+[Rotation Error]
+RRE_AVG:        0.4719 deg
+RRE_STD:        1.1640 deg
+RRE_Median:     0.2696 deg
+RRE_RMSE:       1.2560 deg
+
+[Timing]
+FPS:            13.11 pairs/s
+MT:             76.30 ms/pair
+NT:             0.6359 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1568 samples
+Success Rate:   99.18%
+
+============================================================
+Epoch: 160
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  95.8254%
+RR@(1.0m,  3°):  97.8495%
+RR@(2.0m,  5°):  99.0512%  [Standard]
+RR@(5.0m, 10°):  99.4307%
+
+[Translation Error]
+RTE_AVG:        0.1678 m
+RTE_STD:        0.2228 m
+RTE_Median:     0.1068 m
+RTE_RMSE:       0.2790 m
+
+[Rotation Error]
+RRE_AVG:        0.4574 deg
+RRE_STD:        1.1321 deg
+RRE_Median:     0.2655 deg
+RRE_RMSE:       1.2210 deg
+
+[Timing]
+FPS:            11.88 pairs/s
+MT:             84.21 ms/pair
+NT:             0.7017 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1566 samples
+Success Rate:   99.05%
+
+============================================================
+Epoch: 170
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  95.6989%
+RR@(1.0m,  3°):  97.7862%
+RR@(2.0m,  5°):  99.0512%  [Standard]
+RR@(5.0m, 10°):  99.4307%
+
+[Translation Error]
+RTE_AVG:        0.1708 m
+RTE_STD:        0.2291 m
+RTE_Median:     0.1069 m
+RTE_RMSE:       0.2857 m
+
+[Rotation Error]
+RRE_AVG:        0.4663 deg
+RRE_STD:        1.1824 deg
+RRE_Median:     0.2608 deg
+RRE_RMSE:       1.2710 deg
+
+[Timing]
+FPS:            11.84 pairs/s
+MT:             84.47 ms/pair
+NT:             0.7039 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1566 samples
+Success Rate:   99.05%
+
+============================================================
+Epoch: 180
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  95.1929%
+RR@(1.0m,  3°):  97.4067%
+RR@(2.0m,  5°):  99.0512%  [Standard]
+RR@(5.0m, 10°):  99.4940%
+
+[Translation Error]
+RTE_AVG:        0.1783 m
+RTE_STD:        0.2517 m
+RTE_Median:     0.1078 m
+RTE_RMSE:       0.3084 m
+
+[Rotation Error]
+RRE_AVG:        0.4634 deg
+RRE_STD:        1.1606 deg
+RRE_Median:     0.2593 deg
+RRE_RMSE:       1.2497 deg
+
+[Timing]
+FPS:            12.36 pairs/s
+MT:             80.92 ms/pair
+NT:             0.6743 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1566 samples
+Success Rate:   99.05%
+
+============================================================
+Epoch: 190
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  95.6357%
+RR@(1.0m,  3°):  97.7230%
+RR@(2.0m,  5°):  98.9880%  [Standard]
+RR@(5.0m, 10°):  99.4307%
+
+[Translation Error]
+RTE_AVG:        0.1707 m
+RTE_STD:        0.2348 m
+RTE_Median:     0.1054 m
+RTE_RMSE:       0.2904 m
+
+[Rotation Error]
+RRE_AVG:        0.4589 deg
+RRE_STD:        1.1872 deg
+RRE_Median:     0.2538 deg
+RRE_RMSE:       1.2728 deg
+
+[Timing]
+FPS:            14.07 pairs/s
+MT:             71.08 ms/pair
+NT:             0.5923 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1565 samples
+Success Rate:   98.99%
+
+============================================================
+Epoch: 200
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  95.6357%
+RR@(1.0m,  3°):  97.5965%
+RR@(2.0m,  5°):  99.2410%  [Standard]
+RR@(5.0m, 10°):  99.4940%
+
+[Translation Error]
+RTE_AVG:        0.1677 m
+RTE_STD:        0.2289 m
+RTE_Median:     0.1043 m
+RTE_RMSE:       0.2838 m
+
+[Rotation Error]
+RRE_AVG:        0.4551 deg
+RRE_STD:        1.1059 deg
+RRE_Median:     0.2589 deg
+RRE_RMSE:       1.1959 deg
+
+[Timing]
+FPS:            12.94 pairs/s
+MT:             77.25 ms/pair
+NT:             0.6438 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1569 samples
+Success Rate:   99.24%
+
+============================================================
+Epoch: 210
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  95.3827%
+RR@(1.0m,  3°):  97.8495%
+RR@(2.0m,  5°):  98.9247%  [Standard]
+RR@(5.0m, 10°):  99.4307%
+
+[Translation Error]
+RTE_AVG:        0.1729 m
+RTE_STD:        0.2442 m
+RTE_Median:     0.1030 m
+RTE_RMSE:       0.2992 m
+
+[Rotation Error]
+RRE_AVG:        0.4689 deg
+RRE_STD:        1.2121 deg
+RRE_Median:     0.2669 deg
+RRE_RMSE:       1.2997 deg
+
+[Timing]
+FPS:            12.55 pairs/s
+MT:             79.68 ms/pair
+NT:             0.6640 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1564 samples
+Success Rate:   98.92%
+
+============================================================
+Epoch: 220
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  95.9519%
+RR@(1.0m,  3°):  97.7230%
+RR@(2.0m,  5°):  99.0512%  [Standard]
+RR@(5.0m, 10°):  99.4940%
+
+[Translation Error]
+RTE_AVG:        0.1716 m
+RTE_STD:        0.2476 m
+RTE_Median:     0.1046 m
+RTE_RMSE:       0.3013 m
+
+[Rotation Error]
+RRE_AVG:        0.4626 deg
+RRE_STD:        1.2052 deg
+RRE_Median:     0.2556 deg
+RRE_RMSE:       1.2909 deg
+
+[Timing]
+FPS:            12.26 pairs/s
+MT:             81.58 ms/pair
+NT:             0.6799 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1566 samples
+Success Rate:   99.05%
+
+============================================================
+Epoch: 230
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  95.8887%
+RR@(1.0m,  3°):  97.6597%
+RR@(2.0m,  5°):  98.9247%  [Standard]
+RR@(5.0m, 10°):  99.4940%
+
+[Translation Error]
+RTE_AVG:        0.1689 m
+RTE_STD:        0.2399 m
+RTE_Median:     0.1050 m
+RTE_RMSE:       0.2934 m
+
+[Rotation Error]
+RRE_AVG:        0.4613 deg
+RRE_STD:        1.1817 deg
+RRE_Median:     0.2586 deg
+RRE_RMSE:       1.2685 deg
+
+[Timing]
+FPS:            13.38 pairs/s
+MT:             74.74 ms/pair
+NT:             0.6228 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1564 samples
+Success Rate:   98.92%
+
+============================================================
+Epoch: 210
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  95.5724%
+RR@(1.0m,  3°):  97.5965%
+RR@(2.0m,  5°):  98.9247%  [Standard]
+RR@(5.0m, 10°):  99.3675%
+
+[Translation Error]
+RTE_AVG:        0.1735 m
+RTE_STD:        0.2491 m
+RTE_Median:     0.1053 m
+RTE_RMSE:       0.3036 m
+
+[Rotation Error]
+RRE_AVG:        0.4725 deg
+RRE_STD:        1.2245 deg
+RRE_Median:     0.2623 deg
+RRE_RMSE:       1.3125 deg
+
+[Timing]
+FPS:            12.11 pairs/s
+MT:             82.55 ms/pair
+NT:             0.6879 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1564 samples
+Success Rate:   98.92%
+
+============================================================
+Epoch: 220
+============================================================
+
+[Registration Recall]
+RR@(0.6m,  2°):  95.3827%
+RR@(1.0m,  3°):  97.4067%
+RR@(2.0m,  5°):  98.9880%  [Standard]
+RR@(5.0m, 10°):  99.4940%
+
+[Translation Error]
+RTE_AVG:        0.1746 m
+RTE_STD:        0.2489 m
+RTE_Median:     0.1062 m
+RTE_RMSE:       0.3040 m
+
+[Rotation Error]
+RRE_AVG:        0.4631 deg
+RRE_STD:        1.1670 deg
+RRE_Median:     0.2581 deg
+RRE_RMSE:       1.2555 deg
+
+[Timing]
+FPS:            12.79 pairs/s
+MT:             78.21 ms/pair
+NT:             0.6518 ms/kpts  (normalized time per 1000 points)
+
+[Summary]
+Total:          1581 samples
+Success:        1565 samples
+Success Rate:   98.99%
+
